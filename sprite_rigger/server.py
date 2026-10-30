@@ -113,7 +113,7 @@ class Project:
 
     def refiner(self):
         if self._refiner is None:
-            for p in (self.root / "refiner.npz", HERE / "models" / "refiner.npz"):
+            for p in (self.root / "refiner.npz", HERE / "models" / "refiner.npz", HERE / "models" / "refiner_base.npz"):
                 if p.exists():
                     from .refiner import Refiner
                     self._refiner = Refiner(p)
@@ -182,7 +182,8 @@ class Handler(BaseHTTPRequestHandler):
         u = P._usage
         return {"project": str(P.root), "views": views, "motions": P.motions(), "settings": s_public,
                 "usage": u.__dict__ if u else {"requests": 0, "input_tokens": 0, "output_tokens": 0},
-                "refiner": P.refiner() is not None}
+                "refiner": P.refiner() is not None,
+                "refiner_tuned": (P.root / "refiner.npz").exists()}
 
     def api_settings(self, req):
         s = self.project.settings()
@@ -268,6 +269,25 @@ class Handler(BaseHTTPRequestHandler):
                 break
             m = {**m, **new}
         return {"motion": m, "rounds": rounds}
+
+    def api_tune(self, req):
+        """Tune the refiner to this character's own drawings (no drawing needed)."""
+        from .adapt import adapt
+        P = self.project
+        base = next((p for p in (HERE / "models" / "refiner.npz", HERE / "models" / "refiner_base.npz") if p.exists()), None)
+        if base is None:
+            raise RuntimeError("no base refiner in sprite_rigger/models/")
+        views = {v: P.view(v) for v in P.rig()["views"]}
+        if not views:
+            raise RuntimeError("add poses first")
+        log = []
+        out = adapt(views, str(base), str(P.root / "refiner.npz"), steps=int(req.get("steps", 400)),
+                    log=lambda m: (log.append(m), print(m, flush=True)))
+        P._refiner = None
+        s = P.settings()
+        s["refine"] = True
+        P.save_settings(s)
+        return {"path": out, "log": log[-3:]}
 
     def api_variant(self, req):
         """Save an alternative drawing of a part (full view-size canvas, only that part painted)."""

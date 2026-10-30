@@ -7,3 +7,4 @@ data/
 *.npz
 settings.json
 my_sprite/
+!sprite_rigger/models/refiner_base.npz

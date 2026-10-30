@@ -83,6 +83,18 @@ def test_validators_and_json_extraction():
     assert extract_json('text {"b": {"c": 2}} end') == {"b": {"c": 2}}
 
 
+def test_adapt_pairs_shapes_and_palette():
+    from sprite_rigger.adapt import make_pairs
+    v = load_rig(RIG)["side"]
+    d = make_pairs(v, 6, seed=1)
+    assert d["rough"].shape[1] % 8 == 0 and d["rough"].shape[2] % 8 == 0
+    pal = palette_of(v.image)
+    for k in ("rough", "target"):
+        for f in d[k]:
+            assert palette_of(f) <= pal
+    assert d["touched"].any(axis=(1, 2)).all()
+
+
 if __name__ == "__main__":
     for k, fn in list(globals().items()):
         if k.startswith("test_"):

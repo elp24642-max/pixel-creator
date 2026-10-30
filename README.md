@@ -45,21 +45,24 @@ There is no request limit: providers show your usage, and local models have none
 
 Frames, FPS, motion strength, margin around the sprite, fixed cell size (or fit), preview scale, cleanup on/off, refiner on/off, auto-review limit. Mirror rows on export (a left walk from the right one).
 
-## The refiner model (experimental)
+## The refiner model
 
-A small U-Net (~0.5 M parameters) that runs in numpy (~50 ms per frame on a laptop CPU). It only changes pixels the engine turned, stretched or swapped, and can only pick colours from your palette. Turn it on in the settings once `refiner.npz` is in the project folder or in `sprite_rigger/models/`.
+A small U-Net (~0.5 M parameters) that runs in numpy (~50 ms per frame on a laptop CPU). It only changes pixels the engine turned, stretched or swapped, and can only pick colours from your palette.
 
-It learns from hand-drawn walk cycles: the engine fakes a rough version of each real frame from the standing frame, and the model learns to turn the rough frame into what the artist drew.
+**Two layers:**
 
-**Status:** no weights ship with the repository yet. A short CPU run (6 000 samples, 4 000 steps) reached 82% of redrawn pixels right against 71% for the rough frame, but on the 4-colour example robot it still adds noise more often than it helps. It needs the full run on a GPU, and ideally sprites closer to your style in the data. Train it in a free Colab: open `training/train_refiner_colab.ipynb`, or locally:
+- **Base** (`sprite_rigger/models/refiner_base.npz`) learns from hand-drawn walk cycles: the engine fakes a rough version of each real frame from the standing frame, and the model learns to turn it into what the artist drew. The bundled base is a short CPU run (6 000 samples, 4 000 steps: 82% of redrawn pixels right vs 71% for the rough frame). A longer GPU run makes it better (below).
+- **Tuned to your character**, with no drawing: press *Tune to this character* (3-5 min on a laptop). The app spoils the character's own poses the way the engine does - a part turned through a lossy path - while the answer is the same part turned without loss (a quarter turn, a flip, or back home). So the model learns clean pixels in *this* character's style. The tuned copy is saved in the project folder; the base is never changed, so one character never makes it worse for another. Tuning needs JAX once: run `install_training.bat` / `install_training.sh`.
+
+Honest limits: it cleans and fills; it does not invent a pose that is not there (a turn, a fall). On the example robot the tuned model is clearly cleaner than the base one and about as good as the rule-based cleanup alone; it helps more as the base gets better. Draw missing poses, or draw a part variant and let the engine reuse it.
+
+**Train a better base** in a free Colab GPU: open `training/train_refiner_colab.ipynb`, or locally:
 
 ```
 pip install -r requirements-train.txt
 python training/make_dataset.py <LPC spritesheets folder> data.npz 20000 2
 python training/train.py data.npz sprite_rigger/models/refiner.npz --steps 30000
 ```
-
-Honest limits even when trained: it cleans and fills; it does not invent a pose that is not there (a turn, a fall). Draw those, or draw a part variant and let the engine reuse it.
 
 Training data: [Universal LPC Spritesheet Character Generator](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator) art (CC-BY-SA 3.0 / GPL 3.0 and others; authors in its `CREDITS.csv`). The art is not included in this repository.
 

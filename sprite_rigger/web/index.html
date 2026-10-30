@@ -89,6 +89,7 @@ button:disabled{opacity:.5;cursor:wait}
     <label class="chk"><input type="checkbox" id="s_clean"> <span data-t="clean">Cleanup pass</span></label>
     <label class="chk"><input type="checkbox" id="s_refine"> <span data-t="refine">Refiner model (redraw rough spots)</span></label>
     <p class="muted" id="refnote"></p>
+    <button onclick="tune()" data-t="tune">Tune to this character (3–5 min)</button>
     <label data-t="autofix">Auto-fix safety: max attempts in a row (0 = off)</label><input id="s_auto_fix_limit" type="number" min="0" max="20">
     <button onclick="saveSettings()" data-t="save">Save</button>
   </section>
@@ -216,7 +217,7 @@ posesnote:"Один рисунок на ракурс, одного размер�
 viewname:"Ракурс",file:"PNG",add:"Добавить / заменить",skeleton:"Скелет",view:"Ракурс",notes:"Подсказка модели",airig:"Собрать с ИИ",
 partsjson:"Части (JSON) — правь как хочешь, потом «Применить»",apply:"Применить",motion:"Движение",render_btn:"Собрать",newname:"Имя нового движения",
 describe:"Опиши словами",aimotion:"Написать с ИИ",preview:"Просмотр",showtouched:"Показать перерисованные места",feedback:"Что не так?",
-fix:"Исправить с ИИ",autofix_btn:"Авто-проверка",motionjson:"Движение (JSON)",savemotion:"Сохранить движение",frameedit:"Доработка кадров",
+fix:"Исправить с ИИ",autofix_btn:"Авто-проверка",tune:"Подстроить под персонажа (3–5 мин)",motionjson:"Движение (JSON)",savemotion:"Сохранить движение",frameedit:"Доработка кадров",
 frameeditnote:"Собери движение на вкладке 2, выбери кадр, рисуй. Соседние кадры видны полупрозрачно. Правка сохраняется в движении для этого числа кадров.",
 onion:"Луковая шкура",erase:"Ластик",savepatch:"Сохранить кадр",variants:"Варианты частей",
 variantsnote:"Другой рисунок одной части (согнутое колено, кулак). Выбери часть, нарисуй поверх позы, сохрани; потом в движении \"variant\": [\"\", \"bent\", …].",
@@ -240,7 +241,7 @@ async function load(){S=await (await fetch("/api/state")).json();
   const u=S.usage;$("usage").textContent=`AI: ${u.requests} req · ${u.input_tokens}+${u.output_tokens} tok`;
   const st=S.settings;["frames","fps","amplitude","margin","preview_scale","auto_fix_limit"].forEach(k=>$("s_"+k).value=st[k]);
   $("s_cell").value=st.cell?st.cell.join("x"):"";$("s_clean").checked=st.clean;$("s_refine").checked=st.refine;
-  $("refnote").textContent=S.refiner?"":"(no refiner.npz found: put it in the project folder or sprite_rigger/models/)";
+  $("refnote").textContent=S.refiner_tuned?(LANG==="ru"?"Модель подстроена под этого персонажа.":"Refiner tuned to this character."):(LANG==="ru"?"Базовая модель: подстрой её под персонажа для лучшего результата.":"Base refiner: tune it to the character for better results.");
   $("ai_kind").value=st.ai.kind;$("ai_model").value=st.ai.model||"";$("ai_key").value=st.ai.api_key||"";$("ai_url").value=st.ai.base_url||"";keybox();
   const vs=Object.keys(S.views);
   $("views").innerHTML=vs.map(v=>`<figure><img class="pix" style="height:192px" src="data:image/png;base64,${S.views[v].image}"><figcaption>${v}</figcaption></figure>`).join("")||'<span class="muted">—</span>';
@@ -252,6 +253,8 @@ async function load(){S=await (await fetch("/api/state")).json();
   if(vs.length)showRig()}
 function keybox(){$("ai_keybox").style.display=$("ai_kind").value==="claude-code"?"none":"block"}
 $("ai_kind").onchange=keybox;
+async function tune(){msg(LANG==="ru"?"Подстраиваю модель… это займёт несколько минут":"Tuning… a few minutes");
+  const r=await api("tune",{});msg("✓ "+r.log.slice(-1)[0]);load()}
 async function saveSettings(){const c=$("s_cell").value.trim().split(/[x×,\s]+/).map(Number);
   await api("settings",{frames:+$("s_frames").value,fps:+$("s_fps").value,amplitude:+$("s_amplitude").value,margin:+$("s_margin").value,
     preview_scale:+$("s_preview_scale").value,auto_fix_limit:+$("s_auto_fix_limit").value,clean:$("s_clean").checked,refine:$("s_refine").checked,
