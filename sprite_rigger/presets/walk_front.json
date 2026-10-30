@@ -1,0 +1,14 @@
+{
+  "name": "walk", "view": "front", "loop": true,
+  "about": "Front/back walk, 8 keys: 0 contact, 1 down, 2 pass (left leg up), 3 up, 4 contact, 5 down, 6 pass (right leg up), 7 up. Legs hang from the torso, so a planted leg moves up by the torso's drop to stay on the ground.",
+  "tracks": {
+    "torso":  {"dy": [0, 1, 1, 0, 0, 1, 1, 0]},
+    "head":   {"dy": [0, 0, 1, 0, 0, 0, 1, 0]},
+    "leg_l":  {"dy": [0, -2, -3, -1, 0, -1, -1, 0]},
+    "leg_r":  {"dy": [0, -1, -1, 0, 0, -2, -3, -1]},
+    "arm_l":  {"dy": [0, 0, 0, 0, 0, -1, -1, -1], "dx": [0, 0, 0, 0, 0, 1, 1, 0]},
+    "arm_r":  {"dy": [0, -1, -1, -1, 0, 0, 0, 0], "dx": [0, -1, -1, 0, 0, 0, 0, 0]},
+    "hand_l": {"dy": [0, 0, 0, 0, 0, 0, -1, 0]},
+    "hand_r": {"dy": [0, 0, -1, 0, 0, 0, 0, 0]}
+  }
+}

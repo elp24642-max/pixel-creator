@@ -1,0 +1,8 @@
+{
+  "name": "idle", "view": "any", "loop": true,
+  "about": "Slow breathing: torso sinks 1 px, head follows a key later. Works for any view with torso and head.",
+  "tracks": {
+    "torso": {"dy": [0, 0, 1, 1]},
+    "head":  {"dy": [0, 0, 0, 1]}
+  }
+}

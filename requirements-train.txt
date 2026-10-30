@@ -1,0 +1,4 @@
+# Only needed to train the refiner model yourself (a GPU helps; see training/train_refiner_colab.ipynb)
+-r requirements.txt
+jax>=0.4.30
+optax>=0.2.0

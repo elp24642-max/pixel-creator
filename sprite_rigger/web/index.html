@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sprite-rigger</title>
+<style>
+:root{--bg:#16181d;--panel:#1f232b;--line:#323845;--text:#e6e8ec;--muted:#9aa3b2;--acc:#88c070;--acc2:#e0f8d0;--bad:#ff7a6b;--chk:#2a2f39}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0;letter-spacing:.02em}
+header .sp{flex:1}
+#usage{color:var(--muted);font-size:12px}
+.wrap{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 49px)}
+aside{border-right:1px solid var(--line);padding:12px;overflow:auto}
+main{padding:12px 16px;overflow:auto}
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+label{display:block;font-size:12px;color:var(--muted);margin:6px 0 2px}
+input,select,textarea,button{font:inherit;color:var(--text);background:#14161b;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
+textarea{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;min-height:160px;resize:vertical}
+button{cursor:pointer;width:auto;background:#2a303b}
+button.pri{background:var(--acc);color:#0b1610;border-color:var(--acc);font-weight:600}
+button:disabled{opacity:.5;cursor:wait}
+.row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+.row>button{flex:0 0 auto}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text);margin:6px 0}
+.chk input{width:auto}
+.tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{border-radius:6px 6px 0 0}
+.tabs button.on{background:var(--panel);border-bottom-color:var(--panel);color:var(--acc2)}
+.pix{image-rendering:pixelated;background:repeating-conic-gradient(var(--chk) 0 25%,#22262e 0 50%) 0 0/16px 16px;border:1px solid var(--line);border-radius:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.views{display:flex;gap:12px;flex-wrap:wrap}
+.views figure{margin:0;text-align:center}
+.views figcaption{font-size:12px;color:var(--muted)}
+.strip{display:flex;gap:4px;flex-wrap:wrap}
+.strip canvas{cursor:pointer}
+.strip canvas.sel{outline:2px solid var(--acc)}
+#msg{position:fixed;right:16px;bottom:16px;max-width:420px;padding:10px 12px;border-radius:8px;background:#2a303b;border:1px solid var(--line);display:none;white-space:pre-wrap}
+#msg.bad{border-color:var(--bad)}
+.muted{color:var(--muted);font-size:12px}
+.pal{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}
+.pal div{width:24px;height:24px;border-radius:4px;border:2px solid transparent;cursor:pointer}
+.pal div.on{border-color:#fff}
+@media (max-width:820px){.wrap{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>sprite-rigger</h1><span class="muted" id="proj"></span><span class="sp"></span>
+  <span id="usage"></span>
+  <select id="lang" style="width:auto"><option value="en">EN</option><option value="ru">RU</option></select>
+</header>
+<div class="wrap">
+<aside>
+  <section class="card">
+    <h2 data-t="conn">Model connection</h2>
+    <label data-t="kind">Connection</label>
+    <select id="ai_kind">
+      <option value="claude-code">Claude Code (your sign-in)</option>
+      <option value="anthropic">Anthropic API key</option>
+      <option value="openai">OpenAI-compatible (OpenRouter, OpenAI, Gemini, Ollama, LM Studio…)</option>
+    </select>
+    <label data-t="model">Model (empty = default)</label><input id="ai_model" placeholder="e.g. claude-sonnet-5-5, gpt-5, qwen2.5-vl">
+    <div id="ai_keybox">
+      <label data-t="key">API key</label><input id="ai_key" type="password" autocomplete="off">
+      <label data-t="url">Base URL</label><input id="ai_url" placeholder="https://openrouter.ai/api/v1  ·  http://localhost:11434/v1">
+    </div>
+    <p class="muted" data-t="visionnote">The model must accept images. Key is stored only in the project's settings.json.</p>
+    <button onclick="saveSettings()" data-t="save">Save</button>
+  </section>
+  <section class="card">
+    <h2 data-t="render">Animation settings</h2>
+    <div class="row">
+      <div><label data-t="frames">Frames</label><input id="s_frames" type="number" min="1" max="64"></div>
+      <div><label>FPS</label><input id="s_fps" type="number" min="1" max="60"></div>
+    </div>
+    <div class="row">
+      <div><label data-t="amp">Motion strength</label><input id="s_amplitude" type="number" step="0.1" min="0" max="3"></div>
+      <div><label data-t="margin">Margin px</label><input id="s_margin" type="number" min="0" max="32"></div>
+    </div>
+    <div class="row">
+      <div><label data-t="cell">Cell size (W×H, empty = fit)</label><input id="s_cell" placeholder="48x64"></div>
+      <div><label data-t="scale">Preview ×</label><input id="s_preview_scale" type="number" min="1" max="12"></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="s_clean"> <span data-t="clean">Cleanup pass</span></label>
+    <label class="chk"><input type="checkbox" id="s_refine"> <span data-t="refine">Refiner model (redraw rough spots)</span></label>
+    <p class="muted" id="refnote"></p>
+    <label data-t="autofix">Auto-fix safety: max attempts in a row (0 = off)</label><input id="s_auto_fix_limit" type="number" min="0" max="20">
+    <button onclick="saveSettings()" data-t="save">Save</button>
+  </section>
+</aside>
+<main>
+  <div class="tabs">
+    <button data-tab="rig" class="on" data-t="t_rig">1 · Poses & skeleton</button>
+    <button data-tab="anim" data-t="t_anim">2 · Animation</button>
+    <button data-tab="edit" data-t="t_edit">3 · Touch-up</button>
+    <button data-tab="export" data-t="t_export">4 · Export</button>
+  </div>
+
+  <div id="tab-rig">
+    <section class="card">
+      <h2 data-t="poses">Poses</h2>
+      <p class="muted" data-t="posesnote">One drawing per view, the same size, transparent background. Typical: front, back, side (facing right).</p>
+      <div class="row">
+        <div><label data-t="viewname">View name</label><input id="pose_view" value="front"></div>
+        <div><label data-t="file">PNG</label><input id="pose_file" type="file" accept="image/png,image/gif"></div>
+        <button onclick="uploadPose()" data-t="add">Add / replace</button>
+      </div>
+      <div class="views" id="views" style="margin-top:12px"></div>
+    </section>
+    <section class="card">
+      <h2 data-t="skeleton">Skeleton</h2>
+      <div class="row">
+        <div><label data-t="view">View</label><select id="rig_view" onchange="showRig()"></select></div>
+        <div style="flex:2"><label data-t="notes">Notes for the model</label><input id="rig_notes" placeholder="e.g. tall robot, the round things are shoulders"></div>
+        <button class="pri" onclick="aiRig()" data-t="airig">Build with AI</button>
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        <div><img id="regions" class="pix" style="width:100%;max-width:480px"></div>
+        <div>
+          <label data-t="partsjson">Parts (JSON) — edit freely, then Apply</label>
+          <textarea id="rig_json" style="min-height:420px"></textarea>
+          <div class="row" style="margin-top:6px"><button onclick="applyRig()" data-t="apply">Apply</button></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-anim" hidden>
+    <section class="card">
+      <div class="row">
+        <div><label data-t="view">View</label><select id="an_view"></select></div>
+        <div><label data-t="motion">Motion</label><select id="an_motion" onchange="loadMotion()"></select></div>
+        <button class="pri" onclick="renderAnim()" data-t="render_btn">Render</button>
+      </div>
+      <div class="row">
+        <div><label data-t="newname">New motion name</label><input id="an_name" placeholder="walk_heavy"></div>
+        <div style="flex:2"><label data-t="describe">Describe it</label><input id="an_desc" placeholder="heavy walk, arms swing a lot, head bobs late"></div>
+        <button onclick="aiMotion()" data-t="aimotion">Write with AI</button>
+      </div>
+    </section>
+    <div class="grid2">
+      <section class="card">
+        <h2 data-t="preview">Preview</h2>
+        <canvas id="player" class="pix"></canvas>
+        <label class="chk"><input type="checkbox" id="show_touched"> <span data-t="showtouched">Show redrawn areas</span></label>
+        <div class="strip" id="frames"></div>
+        <label data-t="feedback">What is wrong?</label>
+        <div class="row"><input id="fix_notes" placeholder="left foot slides, make steps heavier"><button onclick="aiFix()" data-t="fix">Fix with AI</button><button onclick="aiAutoFix()" data-t="autofix_btn">Auto-review</button></div>
+      </section>
+      <section class="card">
+        <h2 data-t="motionjson">Motion (JSON)</h2>
+        <textarea id="motion_json" style="min-height:360px"></textarea>
+        <div class="row" style="margin-top:6px">
+          <div><input id="save_name" placeholder="name"></div>
+          <button onclick="saveMotion()" data-t="savemotion">Save motion</button>
+          <button onclick="renderAnim()" data-t="render_btn">Render</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="tab-edit" hidden>
+    <section class="card">
+      <h2 data-t="frameedit">Frame touch-up</h2>
+      <p class="muted" data-t="frameeditnote">Render a motion on tab 2, pick a frame below, paint. Neighbour frames show faintly (onion skin). Saved into the motion for this frame count.</p>
+      <div class="strip" id="edit_frames"></div>
+      <div class="pal" id="pal"></div>
+      <div class="row" style="max-width:520px">
+        <label class="chk"><input type="checkbox" id="onion" checked> <span data-t="onion">Onion skin</span></label>
+        <button onclick="eraseMode()" data-t="erase">Eraser</button>
+        <button onclick="savePatch()" class="pri" data-t="savepatch">Save frame</button>
+      </div>
+      <canvas id="editor" class="pix" style="margin-top:8px;touch-action:none"></canvas>
+    </section>
+    <section class="card">
+      <h2 data-t="variants">Part variants</h2>
+      <p class="muted" data-t="variantsnote">An alternative drawing of one part (bent knee, fist). Pick the part, paint it over the rest pose, save; then use "variant": ["", "bent", …] in a motion.</p>
+      <div class="row" style="max-width:640px">
+        <div><select id="var_part" onchange="openVariant()"></select></div>
+        <div><input id="var_name" placeholder="bent"></div>
+        <button onclick="saveVariant()" data-t="savevariant">Save variant</button>
+      </div>
+      <canvas id="vareditor" class="pix" style="margin-top:8px;touch-action:none"></canvas>
+    </section>
+  </div>
+
+  <div id="tab-export" hidden>
+    <section class="card">
+      <h2 data-t="export">Export</h2>
+      <p class="muted" data-t="exportnote">Each row: name in the sheet, view, motion. Mirror makes a row from another one flipped (left from right).</p>
+      <div id="ex_rows"></div>
+      <div class="row" style="margin-top:8px"><button onclick="addRow()" data-t="addrow">+ Row</button></div>
+      <div class="row" style="margin-top:8px">
+        <div><label data-t="mirror">Mirror (from:to, comma separated)</label><input id="ex_mirror" placeholder="right:left"></div>
+        <div><label data-t="spritename">Sprite name</label><input id="ex_name" placeholder="spr_robot_walk"></div>
+        <button class="pri" onclick="doExport()" data-t="download">Export .zip</button>
+      </div>
+      <p class="muted" id="ex_out"></p>
+    </section>
+  </div>
+</main>
+</div>
+<div id="msg"></div>
+<script>
+const T={ru:{conn:"Подключение модели",kind:"Способ",model:"Модель (пусто = по умолчанию)",key:"API-ключ",url:"Адрес (Base URL)",
+visionnote:"Модель должна понимать картинки. Ключ хранится только в settings.json проекта.",save:"Сохранить",render:"Настройки анимации",
+frames:"Кадров",amp:"Сила движения",margin:"Отступ, px",cell:"Размер кадра (Ш×В, пусто = по месту)",scale:"Превью ×",clean:"Автоочистка",
+refine:"Модель-доработчик (перерисовка грубых мест)",autofix:"Предохранитель автоисправления: попыток подряд (0 = выкл)",
+t_rig:"1 · Позы и скелет",t_anim:"2 · Анимация",t_edit:"3 · Доработка",t_export:"4 · Экспорт",poses:"Позы",
+posesnote:"Один рисунок на ракурс, одного размера, с прозрачным фоном. Обычно: front, back, side (смотрит вправо).",
+viewname:"Ракурс",file:"PNG",add:"Добавить / заменить",skeleton:"Скелет",view:"Ракурс",notes:"Подсказка модели",airig:"Собрать с ИИ",
+partsjson:"Части (JSON) — правь как хочешь, потом «Применить»",apply:"Применить",motion:"Движение",render_btn:"Собрать",newname:"Имя нового движения",
+describe:"Опиши словами",aimotion:"Написать с ИИ",preview:"Просмотр",showtouched:"Показать перерисованные места",feedback:"Что не так?",
+fix:"Исправить с ИИ",autofix_btn:"Авто-проверка",motionjson:"Движение (JSON)",savemotion:"Сохранить движение",frameedit:"Доработка кадров",
+frameeditnote:"Собери движение на вкладке 2, выбери кадр, рисуй. Соседние кадры видны полупрозрачно. Правка сохраняется в движении для этого числа кадров.",
+onion:"Луковая шкура",erase:"Ластик",savepatch:"Сохранить кадр",variants:"Варианты частей",
+variantsnote:"Другой рисунок одной части (согнутое колено, кулак). Выбери часть, нарисуй поверх позы, сохрани; потом в движении \"variant\": [\"\", \"bent\", …].",
+savevariant:"Сохранить вариант",export:"Экспорт",exportnote:"Каждая строка: имя в листе, ракурс, движение. Зеркало делает строку из другой, отражённой (left из right).",
+addrow:"+ Строка",mirror:"Зеркало (откуда:куда, через запятую)",spritename:"Имя спрайта",download:"Экспорт .zip"}};
+let LANG=localStorage.getItem("lang")||(navigator.language||"").slice(0,2);if(!T[LANG])LANG="en";
+const EN={};document.querySelectorAll("[data-t]").forEach(e=>EN[e.dataset.t]=e.textContent);
+function tr(){document.querySelectorAll("[data-t]").forEach(e=>{const k=e.dataset.t;e.textContent=(T[LANG]||{})[k]||EN[k]});document.getElementById("lang").value=LANG}
+document.getElementById("lang").onchange=e=>{LANG=e.target.value;try{localStorage.setItem("lang",LANG)}catch(_){};tr()};
+
+let S=null, FR=[], TOUCH=[], REST=null, playI=0, playT=null, SEL=-1, BRUSH=null, ERASE=false;
+const $=id=>document.getElementById(id);
+function msg(t,bad){const m=$("msg");m.textContent=t;m.className=bad?"bad":"";m.style.display="block";clearTimeout(m._t);m._t=setTimeout(()=>m.style.display="none",bad?9000:3500)}
+async function api(path,body){
+  const btns=[...document.querySelectorAll("button")];btns.forEach(b=>b.disabled=true);
+  try{const r=await fetch("/api/"+path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body||{})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);return j}
+  catch(e){msg(e.message,true);throw e}finally{btns.forEach(b=>b.disabled=false)}}
+async function load(){S=await (await fetch("/api/state")).json();
+  $("proj").textContent=S.project;
+  const u=S.usage;$("usage").textContent=`AI: ${u.requests} req · ${u.input_tokens}+${u.output_tokens} tok`;
+  const st=S.settings;["frames","fps","amplitude","margin","preview_scale","auto_fix_limit"].forEach(k=>$("s_"+k).value=st[k]);
+  $("s_cell").value=st.cell?st.cell.join("x"):"";$("s_clean").checked=st.clean;$("s_refine").checked=st.refine;
+  $("refnote").textContent=S.refiner?"":"(no refiner.npz found: put it in the project folder or sprite_rigger/models/)";
+  $("ai_kind").value=st.ai.kind;$("ai_model").value=st.ai.model||"";$("ai_key").value=st.ai.api_key||"";$("ai_url").value=st.ai.base_url||"";keybox();
+  const vs=Object.keys(S.views);
+  $("views").innerHTML=vs.map(v=>`<figure><img class="pix" style="height:192px" src="data:image/png;base64,${S.views[v].image}"><figcaption>${v}</figcaption></figure>`).join("")||'<span class="muted">—</span>';
+  for(const id of ["rig_view","an_view"]){const cur=$(id).value;$(id).innerHTML=vs.map(v=>`<option>${v}</option>`).join("");if(vs.includes(cur))$(id).value=cur}
+  const ms=Object.keys(S.motions);const cm=$("an_motion").value;$("an_motion").innerHTML=ms.map(m=>`<option>${m}</option>`).join("");if(ms.includes(cm))$("an_motion").value=cm;
+  if(!$("motion_json").value)loadMotion();
+  if(!$("ex_rows").children.length&&vs.length)addRow();
+  refreshRowSelects();
+  if(vs.length)showRig()}
+function keybox(){$("ai_keybox").style.display=$("ai_kind").value==="claude-code"?"none":"block"}
+$("ai_kind").onchange=keybox;
+async function saveSettings(){const c=$("s_cell").value.trim().split(/[x×,\s]+/).map(Number);
+  await api("settings",{frames:+$("s_frames").value,fps:+$("s_fps").value,amplitude:+$("s_amplitude").value,margin:+$("s_margin").value,
+    preview_scale:+$("s_preview_scale").value,auto_fix_limit:+$("s_auto_fix_limit").value,clean:$("s_clean").checked,refine:$("s_refine").checked,
+    cell:c.length===2&&c.every(n=>n>0)?c:null,ai:{kind:$("ai_kind").value,model:$("ai_model").value,api_key:$("ai_key").value,base_url:$("ai_url").value}});
+  msg("✓");load()}
+function fileB64(f){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f)})}
+async function uploadPose(){const f=$("pose_file").files[0];if(!f)return;await api("pose",{view:$("pose_view").value.trim(),png:await fileB64(f)});await load()}
+async function showRig(){const v=$("rig_view").value;if(!v)return;const r=await api("regions",{view:v});$("regions").src="data:image/png;base64,"+r.png;
+  $("rig_json").value=JSON.stringify(S.views[v].parts||{},null,1);fillParts()}
+async function applyRig(){let p;try{p=JSON.parse($("rig_json").value)}catch(e){return msg("JSON: "+e.message,true)}
+  await api("rig",{view:$("rig_view").value,parts:p});msg("✓");load()}
+async function aiRig(){msg("…");const r=await api("ai/rig",{view:$("rig_view").value,notes:$("rig_notes").value});$("rig_json").value=JSON.stringify(r.parts,null,1);msg("✓");load()}
+function loadMotion(){const m=S&&S.motions[$("an_motion").value];if(m){$("motion_json").value=fmt(m);$("save_name").value=$("an_motion").value.replace("preset:","")}}
+function curMotion(){return JSON.parse($("motion_json").value)}
+function settingsNow(){return{frames:+$("s_frames").value,fps:+$("s_fps").value,amplitude:+$("s_amplitude").value,margin:+$("s_margin").value,clean:$("s_clean").checked,refine:$("s_refine").checked}}
+function img(b64){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src="data:image/png;base64,"+b64})}
+async function renderAnim(){let m;try{m=curMotion()}catch(e){return msg("JSON: "+e.message,true)}
+  const r=await api("render",{view:$("an_view").value,motion:m,settings:settingsNow()});
+  FR=await Promise.all(r.frames.map(img));TOUCH=await Promise.all(r.touched.map(img));REST=await img(r.rest);drawStrips();play()}
+function drawStrips(){const sc=2;for(const id of ["frames","edit_frames"]){const el=$(id);el.innerHTML="";
+  FR.forEach((f,i)=>{const c=document.createElement("canvas");c.width=f.width*sc;c.height=f.height*sc;c.className="pix"+(i===SEL&&id==="edit_frames"?" sel":"");
+    const g=c.getContext("2d");g.imageSmoothingEnabled=false;g.drawImage(f,0,0,c.width,c.height);c.onclick=()=>{SEL=i;openFrame()};el.appendChild(c)})}}
+function play(){clearInterval(playT);if(!FR.length)return;const c=$("player"),sc=+$("s_preview_scale").value||4;c.width=FR[0].width*sc;c.height=FR[0].height*sc;
+  const g=c.getContext("2d");g.imageSmoothingEnabled=false;playI=0;
+  playT=setInterval(()=>{g.clearRect(0,0,c.width,c.height);g.drawImage(FR[playI],0,0,c.width,c.height);
+    if($("show_touched").checked)g.drawImage(TOUCH[playI],0,0,c.width,c.height);playI=(playI+1)%FR.length},1000/(+$("s_fps").value||8))}
+async function aiMotion(){const name=$("an_name").value.trim()||"motion";const r=await api("ai/motion",{view:$("an_view").value,name,notes:$("an_desc").value});
+  await load();$("an_motion").value=name;$("motion_json").value=fmt(r.motion);renderAnim()}
+async function aiFix(){let m;try{m=curMotion()}catch(e){return msg("JSON: "+e.message,true)}
+  const r=await api("ai/fix",{view:$("an_view").value,motion:m,notes:$("fix_notes").value,settings:settingsNow()});
+  $("motion_json").value=fmt(r.motion);renderAnim()}
+async function aiAutoFix(){let m;try{m=curMotion()}catch(e){return msg("JSON: "+e.message,true)}
+  const r=await api("ai/autofix",{view:$("an_view").value,motion:m,notes:$("fix_notes").value,settings:{...settingsNow(),auto_fix_limit:+$("s_auto_fix_limit").value}});
+  $("motion_json").value=fmt(r.motion);msg("✓ "+r.rounds);renderAnim()}
+// JSON with number/string lists kept on one line, so curves read as rows
+function fmt(o){return JSON.stringify(o,null,1).replace(/\[\s*([^\[\]{}]*?)\s*\]/g,(m,inner)=>"["+inner.split(/,\s*/).map(x=>x.trim()).join(", ")+"]")}
+async function saveMotion(){let m;try{m=curMotion()}catch(e){return msg("JSON: "+e.message,true)}
+  const r=await api("motion",{name:$("save_name").value.trim()||"motion",motion:m});await load();$("an_motion").value=r.name;msg("✓")}
+
+// ---------- pixel editor (frame patches + part variants)
+function palette(){const cols=new Set();for(const f of [REST||null].concat(FR)){if(!f)continue;const c=document.createElement("canvas");c.width=f.width;c.height=f.height;
+  const g=c.getContext("2d");g.drawImage(f,0,0);const d=g.getImageData(0,0,c.width,c.height).data;for(let i=0;i<d.length;i+=4)if(d[i+3])cols.add(d[i]+","+d[i+1]+","+d[i+2])}
+  return [...cols]}
+function drawPal(){const p=palette();$("pal").innerHTML="";p.forEach(c=>{const d=document.createElement("div");d.style.background=`rgb(${c})`;
+  d.onclick=()=>{BRUSH=c.split(",").map(Number);ERASE=false;[...$("pal").children].forEach(x=>x.classList.remove("on"));d.classList.add("on")};$("pal").appendChild(d)});
+  if(!BRUSH&&p.length)$("pal").children[0].click()}
+function eraseMode(){ERASE=true;[...$("pal").children].forEach(x=>x.classList.remove("on"))}
+function makeEditor(canvas,base,under){const sc=10;canvas.width=base.width*sc;canvas.height=base.height*sc;
+  const work=document.createElement("canvas");work.width=base.width;work.height=base.height;const wg=work.getContext("2d");wg.drawImage(base,0,0);
+  const g=canvas.getContext("2d");g.imageSmoothingEnabled=false;
+  function redraw(){g.clearRect(0,0,canvas.width,canvas.height);if(under){g.globalAlpha=.25;for(const u of under)g.drawImage(u,0,0,canvas.width,canvas.height);g.globalAlpha=1}
+    g.drawImage(work,0,0,canvas.width,canvas.height)}
+  function paint(e){const r=canvas.getBoundingClientRect();const x=Math.floor((e.clientX-r.left)/r.width*base.width),y=Math.floor((e.clientY-r.top)/r.height*base.height);
+    if(ERASE)wg.clearRect(x,y,1,1);else if(BRUSH){wg.fillStyle=`rgb(${BRUSH})`;wg.fillRect(x,y,1,1)}redraw()}
+  let down=false;canvas.onpointerdown=e=>{down=true;canvas.setPointerCapture(e.pointerId);paint(e)};canvas.onpointermove=e=>{if(down)paint(e)};canvas.onpointerup=()=>down=false;
+  redraw();return work}
+let EDIT=null,VAREDIT=null;
+function openFrame(){if(SEL<0||!FR[SEL])return;drawStrips();drawPal();const n=FR.length;
+  const under=$("onion").checked?[FR[(SEL-1+n)%n],FR[(SEL+1)%n]]:null;EDIT=makeEditor($("editor"),FR[SEL],under)}
+async function savePatch(){if(!EDIT)return;const m=curMotion();const n=FR.length;
+  const a=EDIT.getContext("2d").getImageData(0,0,EDIT.width,EDIT.height).data;
+  const c=document.createElement("canvas");c.width=EDIT.width;c.height=EDIT.height;const g=c.getContext("2d");g.drawImage(FR[SEL],0,0);const b=g.getImageData(0,0,c.width,c.height).data;
+  const list=[];for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2]||a[i+3]!==b[i+3]){const p=i/4;list.push([p%c.width,Math.floor(p/c.width),a[i],a[i+1],a[i+2],a[i+3]?255:0])}
+  m.patches=m.patches||{};m.patches[n]=m.patches[n]||{};const old=m.patches[n][SEL]||[];const key=q=>q[0]+","+q[1];const mp=new Map(old.map(q=>[key(q),q]));list.forEach(q=>mp.set(key(q),q));
+  m.patches[n][SEL]=[...mp.values()];$("motion_json").value=fmt(m);
+  await api("motion",{name:$("save_name").value.trim()||"motion",motion:m});await load();msg("✓ "+list.length+" px");renderAnim()}
+function fillParts(){const v=$("rig_view").value;const ps=Object.keys((S.views[v]||{}).parts||{});$("var_part").innerHTML=ps.map(p=>`<option>${p}</option>`).join("")}
+async function openVariant(){const v=$("rig_view").value;const base=await img(S.views[v].image);drawPalFrom(base);VAREDIT=makeEditor($("vareditor"),base,null)}
+function drawPalFrom(base){if(!REST)REST=base;drawPal()}
+async function saveVariant(){if(!VAREDIT)await openVariant();const name=$("var_name").value.trim();if(!name)return msg("name?",true);
+  await api("variant",{view:$("rig_view").value,part:$("var_part").value,name,png:VAREDIT.toDataURL("image/png")});msg("✓");load()}
+
+// ---------- export
+function addRow(){const d=document.createElement("div");d.className="row";d.style.marginTop="6px";
+  d.innerHTML=`<div><input class="r_row" placeholder="down" value="${["down","up","right"][$("ex_rows").children.length]||""}"></div><div><select class="r_view"></select></div><div><select class="r_motion"></select></div><button onclick="this.parentNode.remove()">✕</button>`;
+  $("ex_rows").appendChild(d);refreshRowSelects()}
+function refreshRowSelects(){if(!S)return;const vs=Object.keys(S.views),ms=Object.keys(S.motions);
+  document.querySelectorAll(".r_view").forEach(s=>{const c=s.value;s.innerHTML=vs.map(v=>`<option>${v}</option>`).join("");if(vs.includes(c))s.value=c});
+  document.querySelectorAll(".r_motion").forEach(s=>{const c=s.value;s.innerHTML=ms.map(v=>`<option>${v}</option>`).join("");if(ms.includes(c))s.value=c})}
+async function doExport(){const rows=[...$("ex_rows").children].map(d=>({row:d.querySelector(".r_row").value.trim(),view:d.querySelector(".r_view").value,motion:S.motions[d.querySelector(".r_motion").value]}));
+  const mirror=$("ex_mirror").value.split(",").map(s=>s.trim()).filter(Boolean).map(s=>s.split(":"));
+  const r=await api("export",{rows,mirror,name:$("ex_name").value.trim(),settings:settingsNow()});
+  const a=document.createElement("a");a.href="data:application/zip;base64,"+r.zip;a.download=(($("ex_name").value.trim())||"sprite")+".zip";a.click();
+  $("ex_out").textContent=r.path+" · "+r.frame.join("×")}
+
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  ["rig","anim","edit","export"].forEach(t=>$("tab-"+t).hidden=t!==b.dataset.tab);if(b.dataset.tab==="edit"&&FR.length){drawStrips();drawPal()}});
+tr();load();
+</script>
+</body>
+</html>

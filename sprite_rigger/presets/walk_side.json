@@ -1,0 +1,124 @@
+{
+ "name": "walk",
+ "view": "side",
+ "loop": true,
+ "about": "Side walk facing right, 8 keys. Positive rot turns clockwise, which swings a hanging limb backwards. Frame 0: near leg forward, far leg back. Small angles: long thin legs cross into a tangle above ~12 degrees.",
+ "tracks": {
+  "torso": {
+   "dy": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0
+   ]
+  },
+  "head": {
+   "dy": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0
+   ]
+  },
+  "leg_near": {
+   "rot": [
+    -10,
+    -5,
+    0,
+    5,
+    10,
+    5,
+    0,
+    -5
+   ],
+   "dy": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    -1,
+    -2,
+    -1
+   ]
+  },
+  "foot_near": {
+   "rot": [
+    10,
+    5,
+    0,
+    -5,
+    -10,
+    -8,
+    -3,
+    3
+   ]
+  },
+  "leg_far": {
+   "rot": [
+    10,
+    5,
+    0,
+    -5,
+    -10,
+    -5,
+    0,
+    5
+   ],
+   "dy": [
+    0,
+    -1,
+    -2,
+    -1,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "foot_far": {
+   "rot": [
+    -10,
+    -8,
+    -3,
+    3,
+    10,
+    5,
+    0,
+    -5
+   ]
+  },
+  "arm": {
+   "rot": [
+    6,
+    3,
+    0,
+    -3,
+    -6,
+    -3,
+    0,
+    3
+   ]
+  },
+  "hand": {
+   "rot": [
+    2,
+    2,
+    1,
+    -1,
+    -2,
+    -2,
+    -1,
+    1
+   ]
+  }
+ }
+}
