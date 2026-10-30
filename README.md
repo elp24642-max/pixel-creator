@@ -45,11 +45,13 @@ There is no request limit: providers show your usage, and local models have none
 
 Frames, FPS, motion strength, margin around the sprite, fixed cell size (or fit), preview scale, cleanup on/off, refiner on/off, auto-review limit. Mirror rows on export (a left walk from the right one).
 
-## The refiner model
+## The refiner model (experimental)
 
-`sprite_rigger/models/refiner.npz`, about 0.5 M parameters, runs in numpy (~50 ms per frame on a laptop CPU). It only changes pixels the engine turned, stretched or swapped, and can only pick colours from your palette.
+A small U-Net (~0.5 M parameters) that runs in numpy (~50 ms per frame on a laptop CPU). It only changes pixels the engine turned, stretched or swapped, and can only pick colours from your palette. Turn it on in the settings once `refiner.npz` is in the project folder or in `sprite_rigger/models/`.
 
-It was trained on hand-drawn walk cycles: the engine fakes a rough version of each real frame from the standing frame, and the model learns to turn the rough frame into what the artist drew. Train your own (a free Colab GPU is enough): open `training/train_refiner_colab.ipynb`, or locally:
+It learns from hand-drawn walk cycles: the engine fakes a rough version of each real frame from the standing frame, and the model learns to turn the rough frame into what the artist drew.
+
+**Status:** no weights ship with the repository yet. A short CPU run (6 000 samples, 4 000 steps) reached 82% of redrawn pixels right against 71% for the rough frame, but on the 4-colour example robot it still adds noise more often than it helps. It needs the full run on a GPU, and ideally sprites closer to your style in the data. Train it in a free Colab: open `training/train_refiner_colab.ipynb`, or locally:
 
 ```
 pip install -r requirements-train.txt
@@ -57,7 +59,7 @@ python training/make_dataset.py <LPC spritesheets folder> data.npz 20000 2
 python training/train.py data.npz sprite_rigger/models/refiner.npz --steps 30000
 ```
 
-Honest limits: it cleans and fills; it does not invent a pose that is not there (a turn, a fall). Draw those, or draw a part variant and let the engine reuse it.
+Honest limits even when trained: it cleans and fills; it does not invent a pose that is not there (a turn, a fall). Draw those, or draw a part variant and let the engine reuse it.
 
 Training data: [Universal LPC Spritesheet Character Generator](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator) art (CC-BY-SA 3.0 / GPL 3.0 and others; authors in its `CREDITS.csv`). The art is not included in this repository.
 

@@ -5,6 +5,5 @@ venv/
 export/
 data/
 *.npz
-!sprite_rigger/models/refiner.npz
 settings.json
 my_sprite/
