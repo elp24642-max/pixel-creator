@@ -1,0 +1,88 @@
+{
+ "name": "walk",
+ "view": "side",
+ "loop": true,
+ "about": "Side walk for short legs under a long coat: feet slide forward and back by whole pixels and lift on the forward swing; no rotation.",
+ "tracks": {
+  "torso": {
+   "dy": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0
+   ]
+  },
+  "head": {
+   "dy": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0
+   ]
+  },
+  "leg_near": {
+   "dx": [
+    2,
+    1,
+    0,
+    -1,
+    -2,
+    -1,
+    0,
+    1
+   ],
+   "dy": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    -1,
+    -2,
+    -1
+   ]
+  },
+  "leg_far": {
+   "dx": [
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    1,
+    0,
+    -1
+   ],
+   "dy": [
+    0,
+    -1,
+    -2,
+    -1,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "arm": {
+   "dx": [
+    -1,
+    -1,
+    0,
+    1,
+    1,
+    1,
+    0,
+    -1
+   ]
+  }
+ }
+}
