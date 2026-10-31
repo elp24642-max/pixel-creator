@@ -18,8 +18,8 @@ Animate pixel-art sprites from a few still poses. An AI model builds the skeleto
 You need Python 3.10+.
 
 ```
-git clone https://github.com/YOUR_NAME/sprite-rigger
-cd sprite-rigger
+git clone https://github.com/elp24642-max/pixel-creator
+cd pixel-creator
 run.bat           (Windows)      ./run.sh        (macOS / Linux)
 ```
 
