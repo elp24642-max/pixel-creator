@@ -27,6 +27,17 @@ The first run makes a virtual environment and installs numpy and Pillow. The bro
 
 Try the example: `run.bat examples/robot`.
 
+## Drawing sprites with an AI agent
+
+Any coding agent (Claude Code, Codex, Antigravity, Gemini CLI) or a model over the API can draw sprites here: it writes a JSON **recipe** (palette keys, text grids, shapes, mirror, outline), renders it, looks at the enlarged preview and fixes it. The instructions are in [.claude/skills/pixel-sprite/SKILL.md](.claude/skills/pixel-sprite/SKILL.md); `AGENTS.md` / `GEMINI.md` / `CLAUDE.md` point agents to them. Recipes are data, nothing in them is executed, so they are safe to take from any model.
+
+```
+python -m sprite_rigger draw art/hero.recipe.json        # PNGs + previews + front/back/side poses
+python -m sprite_rigger ascii art/hero.recipe.json hero_front
+```
+
+Idea inspired by [claude-pxl](https://github.com/crsolver/claude-pxl) (MIT), rewritten as a data-only format for this project.
+
 ## Model connections
 
 Pick one in the left panel:

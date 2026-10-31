@@ -16,8 +16,11 @@ N4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
 N8 = N4 + ((1, 1), (1, -1), (-1, 1), (-1, -1))
 
 
-def _fill_regions(fill: np.ndarray) -> np.ndarray:
-    """4-connected labelling of the fill pixels. 0 = not a fill pixel."""
+def _fill_regions(fill: np.ndarray, colour: np.ndarray | None = None) -> np.ndarray:
+    """4-connected labelling of the fill pixels. 0 = not a fill pixel.
+
+    With `colour` (HxW ints), only pixels of the same colour join, so parts drawn as
+    touching flat colours (no line between them) still come apart."""
     h, w = fill.shape
     lab = np.zeros((h, w), dtype=np.int32)
     n = 0
@@ -31,13 +34,38 @@ def _fill_regions(fill: np.ndarray) -> np.ndarray:
                     cy, cx = q.popleft()
                     for dy, dx in N4:
                         ny, nx = cy + dy, cx + dx
-                        if 0 <= ny < h and 0 <= nx < w and fill[ny, nx] and not lab[ny, nx]:
+                        if (0 <= ny < h and 0 <= nx < w and fill[ny, nx] and not lab[ny, nx]
+                                and (colour is None or colour[ny, nx] == colour[cy, cx])):
                             lab[ny, nx] = n
                             q.append((ny, nx))
     return lab
 
 
-def segment(img: np.ndarray, min_size: int = 1, outline=None) -> dict:
+def _merge_tiny(lab: np.ndarray, min_px: int) -> np.ndarray:
+    """Fold regions smaller than min_px into the neighbour they share the longest border with."""
+    lab = lab.copy()
+    h, w = lab.shape
+    changed = True
+    while changed:
+        changed = False
+        ids, counts = np.unique(lab[lab > 0], return_counts=True)
+        for i, n in sorted(zip(ids, counts), key=lambda t: t[1]):
+            if n >= min_px:
+                break
+            border = {}
+            for y, x in zip(*np.nonzero(lab == i)):
+                for dy, dx in N4:
+                    ny, nx = y + dy, x + dx
+                    if 0 <= ny < h and 0 <= nx < w and lab[ny, nx] not in (0, i):
+                        border[lab[ny, nx]] = border.get(lab[ny, nx], 0) + 1
+            if border:
+                lab[lab == i] = max(border, key=border.get)
+                changed = True
+                break
+    return lab
+
+
+def segment(img: np.ndarray, min_size: int = 1, outline=None, min_regions: int = 8) -> dict:
     """Returns {'labels': HxW int array of fill regions, 'masks': {id: HxW bool}}.
 
     masks include the outline pixels each region owns. Regions smaller than
@@ -47,6 +75,14 @@ def segment(img: np.ndarray, min_size: int = 1, outline=None) -> dict:
     outline = tuple(outline) if outline is not None else outline_colour(img)
     is_line = alpha & np.all(img[..., :3] == np.array(outline), axis=-1)
     lab = _fill_regions(alpha & ~is_line)
+    if lab.max() < min_regions:
+        # Few closed shapes: the drawing separates parts by colour, not by lines.
+        packed = (img[..., 0].astype(np.int64) << 16) | (img[..., 1].astype(np.int64) << 8) | img[..., 2]
+        lab = _merge_tiny(_fill_regions(alpha & ~is_line, packed), 4)
+        ids = np.unique(lab[lab > 0])
+        remap = np.zeros(int(lab.max()) + 1, np.int32)
+        remap[ids] = np.arange(1, len(ids) + 1)
+        lab = remap[lab]
     h, w = lab.shape
 
     # Outline pixels: owned by every region they touch (8-neighbourhood).

@@ -87,7 +87,7 @@ def build_view(name: str, image: np.ndarray, spec: dict) -> View:
         piv = p.get("pivot", [src.pivot[0] + dx, src.pivot[1] + dy])
         part = Part(pname, m, tuple(piv), p.get("parent", src.parent), p.get("z", src.z - 0.5), p.get("connect", True))
         shifted = np.roll(np.roll(image, dy, 0), dx, 1)
-        shaded = _shade(shifted, m, palette, p.get("shade", -1), outline_colour(image))
+        shaded = _shade(shifted, m, palette, int(round(p.get("shade", -1))), outline_colour(image))
         part.image = np.where(m[..., None], shaded, 0).astype(np.uint8)
         parts[pname] = part
     for part in parts.values():

@@ -3,6 +3,12 @@
   python -m sprite_rigger regions <pose.png> <out_dir>
       Numbered region picture + regions.json: what you (or a model) group into parts.
 
+  python -m sprite_rigger draw <recipe.json> [--out dir] [--only a,b]
+      Render a sprite recipe: PNGs, upscaled previews, and poses as <view>.png.
+
+  python -m sprite_rigger ascii <recipe.json> <sprite>
+      The sprite as palette keys with x/y rulers (cheap to read for exact fixes).
+
   python -m sprite_rigger animate <rig.json> --out <dir> [--anim down:front:walk_front ...]
       [--frames 8] [--fps 8] [--mirror right:left] [--refiner weights.npz] [--no-clean]
       Each --anim is <row name>:<view>:<motion file or preset name>.
@@ -70,6 +76,21 @@ def cmd_animate(a):
     print(f"{len(rows)} rows x {a.frames} frames of {w}x{h} -> {out}")
 
 
+def cmd_draw(a):
+    from .draw import build
+    res = build(a.recipe, a.out, a.only.split(",") if a.only else None)
+    print(f"built {len(res['built'])}: {', '.join(res['built'])} -> {res['out']}")
+    for n, e in res["errors"].items():
+        print(f"ERROR {n}: {e}")
+    if res["errors"]:
+        raise SystemExit(1)
+
+
+def cmd_ascii(a):
+    from .draw import Recipe
+    print(Recipe(json.loads(Path(a.recipe).read_text())).ascii(a.name))
+
+
 def main():
     ap = argparse.ArgumentParser(prog="sprite_rigger")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -91,6 +112,15 @@ def main():
     n.add_argument("--name")
     n.add_argument("--preview-scale", type=int, default=4)
     n.set_defaults(fn=cmd_animate)
+    d = sub.add_parser("draw")
+    d.add_argument("recipe")
+    d.add_argument("--out")
+    d.add_argument("--only")
+    d.set_defaults(fn=cmd_draw)
+    s2 = sub.add_parser("ascii")
+    s2.add_argument("recipe")
+    s2.add_argument("name")
+    s2.set_defaults(fn=cmd_ascii)
     a = ap.parse_args()
     a.fn(a)
 
