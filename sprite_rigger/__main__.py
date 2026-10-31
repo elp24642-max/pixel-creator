@@ -9,6 +9,9 @@
   python -m sprite_rigger ascii <recipe.json> <sprite>
       The sprite as palette keys with x/y rulers (cheap to read for exact fixes).
 
+  python -m sprite_rigger cut <sheet.png> <out_dir>
+      Split a sprite sheet into separate sprites (+ index.json and a numbered contact sheet).
+
   python -m sprite_rigger animate <rig.json> --out <dir> [--anim down:front:walk_front ...]
       [--frames 8] [--fps 8] [--mirror right:left] [--refiner weights.npz] [--no-clean]
       Each --anim is <row name>:<view>:<motion file or preset name>.
@@ -91,6 +94,14 @@ def cmd_ascii(a):
     print(Recipe(json.loads(Path(a.recipe).read_text())).ascii(a.name))
 
 
+def cmd_cut(a):
+    from .cut import contact_sheet, cut
+    items = cut(a.sheet, a.out, a.min_h, a.max_h)
+    if items:
+        contact_sheet(items, a.out).save(Path(a.out) / "_contact.png")
+    print(f"{len(items)} sprites -> {a.out}")
+
+
 def main():
     ap = argparse.ArgumentParser(prog="sprite_rigger")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -121,6 +132,12 @@ def main():
     s2.add_argument("recipe")
     s2.add_argument("name")
     s2.set_defaults(fn=cmd_ascii)
+    c = sub.add_parser("cut")
+    c.add_argument("sheet")
+    c.add_argument("out")
+    c.add_argument("--min-h", type=int, default=12)
+    c.add_argument("--max-h", type=int, default=200)
+    c.set_defaults(fn=cmd_cut)
     a = ap.parse_args()
     a.fn(a)
 
