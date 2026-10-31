@@ -51,10 +51,10 @@ A small U-Net (~0.5 M parameters) that runs in numpy (~50 ms per frame on a lapt
 
 **Two layers:**
 
-- **Base** (`sprite_rigger/models/refiner_base.npz`) learns from hand-drawn walk cycles: the engine fakes a rough version of each real frame from the standing frame, and the model learns to turn it into what the artist drew. The bundled base is a short CPU run (6 000 samples, 4 000 steps: 82% of redrawn pixels right vs 71% for the rough frame). A longer GPU run makes it better (below).
+- **Base** (`sprite_rigger/models/refiner_base.npz`) learns from hand-drawn walk cycles: the engine fakes a rough version of each real frame from the standing frame, and the model learns to turn it into what the artist drew. The bundled base was trained on a free Colab T4 (20 000 samples, 30 000 steps, ~0.9 M parameters): 90% of redrawn pixels right on held-out walk frames, against 71% for the rough frame (an earlier short CPU run reached 83%).
 - **Tuned to your character**, with no drawing: press *Tune to this character* (3-5 min on a laptop). The app spoils the character's own poses the way the engine does - a part turned through a lossy path - while the answer is the same part turned without loss (a quarter turn, a flip, or back home). So the model learns clean pixels in *this* character's style. The tuned copy is saved in the project folder; the base is never changed, so one character never makes it worse for another. Tuning needs JAX once: run `install_training.bat` / `install_training.sh`.
 
-Honest limits: it cleans and fills; it does not invent a pose that is not there (a turn, a fall). On the example robot the tuned model is clearly cleaner than the base one and about as good as the rule-based cleanup alone; it helps more as the base gets better. Draw missing poses, or draw a part variant and let the engine reuse it.
+Honest limits: it cleans and fills; it does not invent a pose that is not there (a turn, a fall). On the example robot's side view (thin legs drawn over each other) the tuned model is still no better than the rule-based cleanup alone, so the refiner is off by default; it helps most where parts turn without overlapping. Draw missing poses, or draw a part variant and let the engine reuse it.
 
 **Train a better base** in a free Colab GPU: open `training/train_refiner_colab.ipynb`, or locally:
 
