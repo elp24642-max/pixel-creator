@@ -2,27 +2,13 @@
  "name": "walk",
  "view": "front",
  "loop": true,
- "about": "Front/back walk with weight, 8 keys: 0 contact, 1 down, 2 pass (left leg up), 3 up, 4 contact, 5 down, 6 pass (right leg up), 7 up. The body dips 2 px on each step; the head arrives a key late; arms swing against the legs and the hands trail. Legs hang from the torso, so a planted leg cancels the torso's dip to stay put.",
+ "about": "Front/back walk with weight, 8 keys: 0 contact, 1 down, 2 pass (left leg up), 3 up, 4 contact, 5 down, 6 pass (right leg up), 7 up. The body dips 2 px on each step; the head arrives a key late; arms stay with the body (no shoulder swing), hands trail slightly. Legs hang from the torso, so a planted leg cancels the torso's dip to stay put.",
  "tracks": {
   "torso": {
    "dy": [1, 2, 1, 0, 1, 2, 1, 0]
   },
   "head": {
    "dy": [0, 0, 1, 0, 0, 0, 1, 0]
-  },
-  "shoulder_l": {
-   "dy": [0, -1, -1, 0, 0, 1, 1, 0]
-  },
-  "shoulder_r": {
-   "dy": [0, 1, 1, 0, 0, -1, -1, 0]
-  },
-  "arm_l": {
-   "dy": [0, 0, 1, 0, 0, -1, -2, -1],
-   "dx": [0, 0, 0, 0, 0, 1, 1, 0]
-  },
-  "arm_r": {
-   "dy": [0, -1, -2, -1, 0, 0, 1, 0],
-   "dx": [0, -1, -1, 0, 0, 0, 0, 0]
   },
   "hand_l": {
    "dy": [0, 0, 0, 1, 0, 0, -1, -1]
